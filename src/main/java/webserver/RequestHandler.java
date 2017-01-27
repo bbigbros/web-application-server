@@ -47,7 +47,6 @@ public class RequestHandler extends Thread {
             String method = tokens[0];
             String requestUrl = tokens[1];
             int length = 0;
-            Map<String, String> map;
             String cookies = "";
 
             while(!line.equals("")) {
@@ -65,13 +64,13 @@ public class RequestHandler extends Thread {
             if (method.toLowerCase().equals("get")) {
                 // method 가 get일 경우
                 if(requestUrl.startsWith("/user/create")) {
-                    map = HttpRequestUtils.parseQueryString(requestUrl);
+                    Map<String, String>map = HttpRequestUtils.parseQueryString(requestUrl);
                     User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
                     log.debug(user.toString());
                 } else if (requestUrl.startsWith("/user/list.html")) {
                     log.debug("wowowowowoww {} ", cookies);
-                    String data = IOUtils.readData(br, length);
-                    map = HttpRequestUtils.parseCookies(cookies);
+//                    String data = IOUtils.readData(br, length);
+                    Map<String, String>map = HttpRequestUtils.parseCookies(cookies);
                     if (Boolean.parseBoolean(map.get("logined"))) {
                         User user;
                         StringBuilder sb = new StringBuilder();
@@ -90,12 +89,12 @@ public class RequestHandler extends Thread {
                         sb.append("</table>");
                         byte[] body = sb.toString().getBytes();
 
-                        response200Header(dos, body.length);
+                        response200Header(dos, body.length, "text/html");
                         responseBody(dos, body);
                     }
                 } else if (requestUrl.endsWith(".css")) {
                     byte[] body = readFirstUrl(requestUrl);
-                    response200CssHeader(dos, body.length);
+                    response200Header(dos, body.length, "text/css");
                     responseBody(dos, body);
                 } else {
                     byte[] body = readFirstUrl(requestUrl);
@@ -105,33 +104,29 @@ public class RequestHandler extends Thread {
                         return;
                     }
 
-                    response200Header(dos, body.length);
+                    response200Header(dos, body.length, "text/html");
                     responseBody(dos, body);
                 }
             } else if (method.toLowerCase().equals("post")) {
                 // method가 post일 경우
                 if (requestUrl.startsWith("/user/create")) {
-                    String data = IOUtils.readData(br, length);
-                    map = HttpRequestUtils.parseQueryString(data);
+                    Map<String, String>map = getParams(br, length);
                     User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
                     DataBase.addUser(user);
-                    log.debug("회원 등록 완료.", user.toString());
                     requestUrl = "/index.html";
-                    response302Header(dos, requestUrl);
+                    response302Header(dos, requestUrl, "not cookie");
                 } else if (requestUrl.startsWith("/user/login")) {
                     // login
-                    String data = IOUtils.readData(br, length);
-                    map = HttpRequestUtils.parseQueryString(data);
-                    log.debug("hello world {} ", data);
+                    Map<String, String> map = getParams(br, length);
                     User u = DataBase.findUserById(map.get("userId"));
                     try {
                         if (u.getPassword().equals(map.get("password"))) {
-                            // 로그인 성공.
+                            // login success
                             log.debug("login check: {} {}", u.getPassword(), map.get("password"));
-                            response302LoginSuccessHeader(dos, "/index.html");
+                            response302Header(dos, "/index.html", "logined=true");
                         } else {
-                            // 로그인 실패.
-                            response302LoginFailedHeader(dos, "/user/login_failed.html");
+                            // login failed
+                            response302Header(dos, "/user/login_failed.html", "logined=false");
                         }
 
                     } catch (NullPointerException e) {
@@ -144,6 +139,13 @@ public class RequestHandler extends Thread {
         }
     }
 
+    private Map<String, String> getParams(BufferedReader br, int length) throws IOException {
+        String data = IOUtils.readData(br, length);
+        Map<String, String> params = HttpRequestUtils.parseQueryString(data);
+
+        return params;
+    }
+
     private byte[] readFirstUrl(String url) {
         byte[] body = null;
         try {
@@ -151,13 +153,14 @@ public class RequestHandler extends Thread {
         }catch (Exception e){
             e.getMessage();
         }
+
         return body;
     }
 
-    private void response200CssHeader(DataOutputStream dos, int lengthOfBodyContent) {
+    private void response200Header(DataOutputStream dos, int lengthOfBodyContent, String type) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/css\r\n");
+            dos.writeBytes("Content-Type: " + type + ";charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
@@ -165,42 +168,13 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void response302LoginFailedHeader(DataOutputStream dos, String url) {
-        try {
-            dos.writeBytes("HTTP/1.1 302 Redirect\r\n");
-            dos.writeBytes("Set-Cookie: logined=false\r\n");
-            dos.writeBytes("Location : " + url + "\r\n");
-        } catch(IOException e) {
-            log.debug(e.getMessage());
-        }
-    }
-
-    private void response302LoginSuccessHeader(DataOutputStream dos, String url) {
-        try {
-            dos.writeBytes("HTTP/1.1 302 Redirect\r\n");
-            dos.writeBytes("Set-Cookie: logined=true\r\n");
-            dos.writeBytes("Location: " + url + "\r\n");
-            dos.writeBytes("\r\n");
-        } catch(IOException e) {
-            log.debug(e.getMessage());
-        }
-    }
-
-    private void response302Header(DataOutputStream dos, String url) {
+    private void response302Header(DataOutputStream dos, String url, String cookie) {
         try {
             dos.writeBytes("HTTP/1.1 302 Redirect \r\n");
+            if (cookie.startsWith("logined")) {
+                dos.writeBytes("Set-Cookie: " + cookie + "\r\n");
+            }
             dos.writeBytes("Location: " + url + "\r\n");
-            dos.writeBytes("\r\n");
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
-        try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
