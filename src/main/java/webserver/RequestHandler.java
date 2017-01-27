@@ -42,12 +42,13 @@ public class RequestHandler extends Thread {
 
             // 만약 null일 경우 더 진행할 의미가 없다.
             if(line == null) return;
+
             log.debug("header: {}", line);
             String[] tokens = line.split(" ");
             String method = tokens[0];
             String requestUrl = tokens[1];
-            int length = 0;
             String cookies = "";
+            int length = 0;
 
             while(!line.equals("")) {
                 line = br.readLine();
@@ -62,81 +63,68 @@ public class RequestHandler extends Thread {
             }
 
             if (method.toLowerCase().equals("get")) {
-                // method 가 get일 경우
                 if(requestUrl.startsWith("/user/create")) {
+                    requestUrl = HttpRequestUtils.getMethodCleanData(requestUrl);
                     Map<String, String>map = HttpRequestUtils.parseQueryString(requestUrl);
-                    User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
-                    log.debug(user.toString());
+                    createUser(dos, map);
                 } else if (requestUrl.startsWith("/user/list.html")) {
-                    log.debug("wowowowowoww {} ", cookies);
-//                    String data = IOUtils.readData(br, length);
-                    Map<String, String>map = HttpRequestUtils.parseCookies(cookies);
-                    if (Boolean.parseBoolean(map.get("logined"))) {
-                        User user;
-                        StringBuilder sb = new StringBuilder();
-                        Collection<User> users = DataBase.findAll();
-                        Iterator<User> it = users.iterator();
-                        sb.append("<table>");
-                        while(it.hasNext()) {
-                            user = it.next();
-                            sb.append("<tr>");
-                            sb.append("<td>" + user.getUserId() + "</td>");
-                            sb.append("<td>" + user.getPassword() + "</td>");
-                            sb.append("<td>" + user.getName() + "</td>");
-                            sb.append("<td>" + user.getEmail() + "</td>");
-                            sb.append("</tr>");
-                        }
-                        sb.append("</table>");
-                        byte[] body = sb.toString().getBytes();
-
-                        response200Header(dos, body.length, "text/html");
-                        responseBody(dos, body);
-                    }
+                    createListUser(dos, HttpRequestUtils.parseCookies(cookies));
                 } else if (requestUrl.endsWith(".css")) {
-                    byte[] body = readFirstUrl(requestUrl);
-                    response200Header(dos, body.length, "text/css");
-                    responseBody(dos, body);
+                    defaultResponse(dos, readFirstUrl(requestUrl), "text/css");
                 } else {
-                    byte[] body = readFirstUrl(requestUrl);
-
-                    if(body == null) {
-                        log.debug("not connection page. close");
-                        return;
-                    }
-
-                    response200Header(dos, body.length, "text/html");
-                    responseBody(dos, body);
+                    defaultResponse(dos, readFirstUrl(requestUrl), "text/html");
                 }
             } else if (method.toLowerCase().equals("post")) {
-                // method가 post일 경우
                 if (requestUrl.startsWith("/user/create")) {
-                    Map<String, String>map = getParams(br, length);
-                    User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
-                    DataBase.addUser(user);
-                    requestUrl = "/index.html";
-                    response302Header(dos, requestUrl, "not cookie");
+                    createUser(dos, getParams(br, length));
                 } else if (requestUrl.startsWith("/user/login")) {
-                    // login
                     Map<String, String> map = getParams(br, length);
                     User u = DataBase.findUserById(map.get("userId"));
-                    try {
-                        if (u.getPassword().equals(map.get("password"))) {
-                            // login success
-                            log.debug("login check: {} {}", u.getPassword(), map.get("password"));
-                            response302Header(dos, "/index.html", "logined=true");
-                        } else {
-                            // login failed
-                            response302Header(dos, "/user/login_failed.html", "logined=false");
-                        }
-
-                    } catch (NullPointerException e) {
-                        log.debug(e.getMessage());
+                    if (u.getPassword().equals(map.get("password"))) {
+                        // login success
+                        response302Header(dos, "/index.html", "logined=true");
+                    } else {
+                        // login failed
+                        response302Header(dos, "/user/login_failed.html", "logined=false");
                     }
                 }
             }
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private void defaultResponse(DataOutputStream dos, byte[] body, String type) {
+        response200Header(dos, body.length, type);
+        responseBody(dos, body);
+    }
+
+    private void createListUser(DataOutputStream dos, Map<String, String>map) {
+        if (Boolean.parseBoolean(map.get("logined"))) {
+            User user;
+            StringBuilder sb = new StringBuilder();
+            Collection<User> users = DataBase.findAll();
+            Iterator<User> it = users.iterator();
+            sb.append("<table>");
+            while(it.hasNext()) {
+                user = it.next();
+                sb.append("<tr>");
+                sb.append("<td>" + user.getUserId() + "</td>");
+                sb.append("<td>" + user.getPassword() + "</td>");
+                sb.append("<td>" + user.getName() + "</td>");
+                sb.append("<td>" + user.getEmail() + "</td>");
+                sb.append("</tr>");
+            }
+            sb.append("</table>");
+            defaultResponse(dos, sb.toString().getBytes(), "text/html");
+        }
+    }
+
+    private void createUser(DataOutputStream dos, Map<String, String> map) {
+        log.debug("Create User check :: {} ", map);
+        User user = new User(map.get("userId"), map.get("password"), map.get("name"), map.get("email"));
+        DataBase.addUser(user);
+        response302Header(dos, "/index.html", "Create User Success!!");
     }
 
     private Map<String, String> getParams(BufferedReader br, int length) throws IOException {
@@ -176,6 +164,7 @@ public class RequestHandler extends Thread {
             }
             dos.writeBytes("Location: " + url + "\r\n");
             dos.writeBytes("\r\n");
+            log.debug("{}", cookie);
         } catch (IOException e) {
             log.error(e.getMessage());
         }

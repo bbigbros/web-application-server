@@ -36,13 +36,13 @@ public class HttpRequestUtils {
                 .collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
     }
 
-//    private static String seperateUrlName(String queryString) {
-//        String url = queryString;
-//        int index = url.indexOf("?");
-//        url = url.substring(index + 1);
-//
-//        return url;
-//    }
+    public static String getMethodCleanData(String queryString) {
+        String url = queryString;
+        int index = url.indexOf("?");
+        url = url.substring(index + 1);
+
+        return url;
+    }
 
     static Pair getKeyValue(String keyValue, String regex) {
         if (Strings.isNullOrEmpty(keyValue)) {
