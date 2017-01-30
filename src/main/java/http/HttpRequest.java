@@ -3,6 +3,7 @@ package http;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
+import util.IOUtils;
 import webserver.RequestHandler;
 
 import java.io.*;
@@ -18,6 +19,7 @@ public class HttpRequest {
     private Map<String, String> requestLine = new HashMap<String, String>();
     private Map<String, String> requestHeaders = new HashMap<String, String>();
     private Map<String, String> requestPathParams = new HashMap<String, String>();
+    private int contentLength;
 
     /*
      * HttpRequest 생성자 생성
@@ -42,21 +44,37 @@ public class HttpRequest {
         requestLine.put("method", tokens[0]);
         requestLine.put("path", tokens[1]);
         requestLine.put("httpVer", tokens[2]);
-        setPathParameter(tokens[1]);
 
         while(!line.equals("")) {
             line = br.readLine();
-            if (line == null) return;
+            if (line == null || line.equals("")) break;
             tokens = line.split(":");
             requestHeaders.put(tokens[0], tokens[1].trim());
         }
+        setPathParameter(requestLine.get("path"));
+
+        if (contentLength > 0) {
+            String data = IOUtils.readData(br, contentLength);
+            requestPathParams = HttpRequestUtils.parseQueryString(data);
+        }
+
     }
 
     private void setPathParameter(String path) {
-        String pathInfo = HttpRequestUtils.getMethodCleanData(path);
-        requestPathParams = HttpRequestUtils.parseQueryString(pathInfo);
+        if (isPost()) {
+            contentLength = Integer.parseInt(requestHeaders.get("Content-Length"));
+        } else {
+            String pathInfo = HttpRequestUtils.getMethodCleanData(path);
+            requestPathParams = HttpRequestUtils.parseQueryString(pathInfo);
+        }
     }
 
+    public boolean isPost() {
+        if (requestLine.get("method").equals("POST")) {
+            return true;
+        }
+        return false;
+    }
     public String getParameter(String key) {
         return requestPathParams.get(key);
     }

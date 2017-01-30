@@ -15,7 +15,7 @@ public class HttpRequestTest {
     private static final Logger logger = LoggerFactory.getLogger(HttpRequestTest.class);
 
     @Test
-    public void request_get() throws IOException {
+    public void request_GET() throws Exception {
         InputStream in = new FileInputStream(new File("./src/test/resources/http_GET.txt"));
         HttpRequest hr = new HttpRequest(in);
 
@@ -24,5 +24,16 @@ public class HttpRequestTest {
         assertEquals("JaeSung", hr.getParameter("name"));
         assertEquals("GET", hr.getMethod());
         assertEquals("keep-alive", hr.getHeader("Connection"));
+    }
+
+    @Test
+    public void request_POST() throws Exception {
+        InputStream in = new FileInputStream(new File("./src/test/resources/http_POST.txt"));
+        HttpRequest hr = new HttpRequest(in);
+
+        assertEquals("POST", hr.getMethod());
+        assertEquals("/user/create", hr.getPath());
+        assertEquals("keep-alive", hr.getHeader("Connection"));
+        assertEquals("javajigi", hr.getParameter("userId"));
     }
 }
