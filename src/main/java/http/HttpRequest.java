@@ -1,0 +1,79 @@
+package http;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import util.HttpRequestUtils;
+import webserver.RequestHandler;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Created by stripes on 2017. 1. 28..
+ */
+public class HttpRequest {
+    private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
+
+    private Map<String, String> requestLine = new HashMap<String, String>();
+    private Map<String, String> requestHeaders = new HashMap<String, String>();
+    private Map<String, String> requestPathParams = new HashMap<String, String>();
+
+    /*
+     * HttpRequest 생성자 생성
+     */
+    public HttpRequest(InputStream in) {
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            String requestLine = br.readLine();
+
+            if (requestLine == null) {
+                return;
+            }
+            processHttpRequest(requestLine, br);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void processHttpRequest(String line, BufferedReader br) throws IOException {
+        String[] tokens = line.split(" ");
+        requestLine.put("method", tokens[0]);
+        requestLine.put("path", tokens[1]);
+        requestLine.put("httpVer", tokens[2]);
+        setPathParameter(tokens[1]);
+
+        while(!line.equals("")) {
+            line = br.readLine();
+            if (line == null) return;
+            tokens = line.split(":");
+            requestHeaders.put(tokens[0], tokens[1].trim());
+        }
+    }
+
+    private void setPathParameter(String path) {
+        String pathInfo = HttpRequestUtils.getMethodCleanData(path);
+        requestPathParams = HttpRequestUtils.parseQueryString(pathInfo);
+    }
+
+    public String getParameter(String key) {
+        return requestPathParams.get(key);
+    }
+
+    public String getHeader(String key) {
+        return requestHeaders.get(key);
+    }
+
+    public String getMethod() {
+        return requestLine.get("method");
+    }
+
+    public String getPath() {
+        return requestLine.get("path");
+    }
+
+    public String getHttpVersion() {
+        return requestLine.get("httpVer");
+    }
+}
