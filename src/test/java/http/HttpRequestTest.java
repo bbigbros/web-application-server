@@ -1,6 +1,5 @@
-package util;
+package http;
 
-import http.HttpRequest;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.slf4j.Logger;

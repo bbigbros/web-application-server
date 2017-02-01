@@ -75,6 +75,7 @@ public class HttpRequest {
         }
         return false;
     }
+
     public String getParameter(String key) {
         return requestPathParams.get(key);
     }
@@ -83,9 +84,7 @@ public class HttpRequest {
         return requestHeaders.get(key);
     }
 
-    public String getMethod() {
-        return requestLine.get("method");
-    }
+    public String getMethod() { return requestLine.get("method"); }
 
     public String getPath() {
         return requestLine.get("path");
