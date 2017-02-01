@@ -28,6 +28,7 @@ public class HttpResponse {
         byte[] body = null;
         try {
             body = Files.readAllBytes(new File("./webapp" + path).toPath());
+            log.debug("wowowow{}", path);
             if (path.endsWith(".css")) {
                 responseHeaders.put("Content-Type", "text/css;charset=utf-8");
             } else if(path.endsWith(".js")) {
