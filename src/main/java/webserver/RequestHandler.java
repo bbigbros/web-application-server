@@ -2,10 +2,15 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+
+import controller.*;
 import http.HttpRequest;
 import http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 
 public class RequestHandler extends Thread {
@@ -29,28 +34,35 @@ public class RequestHandler extends Thread {
         // 서버 입장에서 출력 : OutputStream
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
 
-            if (request.getMethod().equals("GET")) {
-                if(request.getPath().startsWith("/user/create")) {
-                    response.sendRedirect("/index.html");
-                } else if (request.getPath().startsWith("/user/list.html")) {
-//                    createListUser(dos, HttpRequestUtils.parseCookies(cookies));
-                    log.debug("list");
-                } else {
-                    log.debug("get default");
-                    response.forward(request.getPath());
-                }
-            } else if (request.getMethod().equals("POST")) {
-                if(request.getPath().startsWith("/user/create")) {
-                    response.sendRedirect("/index.html");
-                } else if (request.getPath().startsWith("/user/login")) {
-                    log.debug("post login");
-                    response.sendRedirect("/index.html");
-                }
-            }
+            Map<String, Controller> controllers = new HashMap<String, Controller>();
+            controllers.put("/user/create", new CreateUserController());
+            controllers.put("/user/login", new LoginController());
+            controllers.put("/list", new ListUserController());
+
+            Controller c = controllers.get(request.getPath());
+            c.service(request, response);
+
+//            if (request.getMethod().equals("GET")) {
+//                if(request.getPath().startsWith("/user/create")) {
+//                    response.sendRedirect("/index.html");
+//                } else if (request.getPath().startsWith("/user/list.html")) {
+////                    createListUser(dos, HttpRequestUtils.parseCookies(cookies));
+//                    log.debug("list");
+//                } else {
+//                    log.debug("get default");
+//                    response.forward(request.getPath());
+//                }
+//            } else if (request.getMethod().equals("POST")) {
+//                if(request.getPath().startsWith("/user/create")) {
+//                    response.sendRedirect("/index.html");
+//                } else if (request.getPath().startsWith("/user/login")) {
+//                    log.debug("post login");
+//                    response.sendRedirect("/index.html");
+//                }
+//            }
         } catch (IOException e) {
             log.error(e.getMessage());
         }
