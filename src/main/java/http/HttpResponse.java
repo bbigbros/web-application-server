@@ -25,7 +25,6 @@ public class HttpResponse {
     }
 
     public void forward(String path) {
-        log.debug("forward : {}", path);
         byte[] body = null;
         try {
             body = Files.readAllBytes(new File("./webapp" + path).toPath());
@@ -42,7 +41,7 @@ public class HttpResponse {
             e.getMessage();
         }
         response200Header(body.length);
-        responseBody(dos, body);
+        responseBody(body);
     }
 
     public void sendRedirect(String redirectUrl) {
@@ -54,6 +53,14 @@ public class HttpResponse {
         } catch (Exception e) {
             log.error(e.getMessage());
         }
+    }
+
+    public void forwardBody(String body) {
+        byte[] contents = body.getBytes();
+        responseHeaders.put("Content-Type", "text/html;charset=utf-8");
+        responseHeaders.put("Content-Length", contents.length + "");
+        response200Header(contents.length);
+        responseBody(contents);
     }
 
     public void addHeader(String key, String value) {
@@ -81,7 +88,7 @@ public class HttpResponse {
         }
     }
 
-    private void responseBody(DataOutputStream dos, byte[] body) {
+    private void responseBody(byte[] body) {
         try {
             dos.write(body, 0, body.length);
             dos.flush();

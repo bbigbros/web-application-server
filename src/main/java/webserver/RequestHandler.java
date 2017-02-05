@@ -51,25 +51,6 @@ public class RequestHandler extends Thread {
             } else {
                 c.service(request, response);
             }
-
-//            if (request.getMethod().equals("GET")) {
-//                if(request.getPath().startsWith("/user/create")) {
-//                    response.sendRedirect("/index.html");
-//                } else if (request.getPath().startsWith("/user/list.html")) {
-////                    createListUser(dos, HttpRequestUtils.parseCookies(cookies));
-//                    log.debug("list");
-//                } else {
-//                    log.debug("get default");
-//                    response.forward(request.getPath());
-//                }
-//            } else if (request.getMethod().equals("POST")) {
-//                if(request.getPath().startsWith("/user/create")) {
-//                    response.sendRedirect("/index.html");
-//                } else if (request.getPath().startsWith("/user/login")) {
-//                    log.debug("post login");
-//                    response.sendRedirect("/index.html");
-//                }
-//            }
         } catch (IOException e) {
             log.error(e.getMessage());
         }
