@@ -86,9 +86,7 @@ public class HttpRequest {
 
     public String getMethod() { return requestLine.get("method"); }
 
-    public String getPath() {
-        return requestLine.get("path");
-    }
+    public String getPath() { return requestLine.get("path"); }
 
     public String getHttpVersion() {
         return requestLine.get("httpVer");

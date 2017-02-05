@@ -25,6 +25,7 @@ public class HttpResponse {
     }
 
     public void forward(String path) {
+        log.debug("forward : {}", path);
         byte[] body = null;
         try {
             body = Files.readAllBytes(new File("./webapp" + path).toPath());

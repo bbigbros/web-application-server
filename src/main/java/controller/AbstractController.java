@@ -23,7 +23,5 @@ public class AbstractController implements Controller {
 
     }
     void doPost(HttpRequest request, HttpResponse response) { }
-    void doGet(HttpRequest request, HttpResponse response) {
-        log.debug(" abstract 유레카!!!!!!!!!!!!!");
-    }
+    void doGet(HttpRequest request, HttpResponse response) { }
 }

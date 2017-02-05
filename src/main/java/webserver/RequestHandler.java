@@ -43,7 +43,14 @@ public class RequestHandler extends Thread {
             controllers.put("/list", new ListUserController());
 
             Controller c = controllers.get(request.getPath());
-            c.service(request, response);
+            if (c == null) {
+                if(request.getPath().equals("/") || request.getPath().equals("")) {
+                    response.forward("/index.html");
+                }
+                response.forward(request.getPath());
+            } else {
+                c.service(request, response);
+            }
 
 //            if (request.getMethod().equals("GET")) {
 //                if(request.getPath().startsWith("/user/create")) {
