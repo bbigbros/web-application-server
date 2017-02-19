@@ -37,6 +37,8 @@ public class RequestHandler extends Thread {
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
 
+
+
             Map<String, Controller> controllers = new HashMap<String, Controller>();
             controllers.put("/user/create", new CreateUserController());
             controllers.put("/user/login", new LoginController());
