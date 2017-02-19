@@ -4,13 +4,14 @@ import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import controller.*;
 import http.HttpRequest;
 import http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import util.HttpRequestUtils;
 
 
 public class RequestHandler extends Thread {
@@ -37,7 +38,9 @@ public class RequestHandler extends Thread {
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
 
-
+            if (getSeesionId(request.getHeader("Cookie")) == null) {
+                response.addHeader("Set-Cookie", "JSESSIONID=" + UUID.randomUUID());
+            }
 
             Map<String, Controller> controllers = new HashMap<String, Controller>();
             controllers.put("/user/create", new CreateUserController());
@@ -56,5 +59,10 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    public String getSeesionId(String cookies) {
+        Map<String, String> cookieValues = HttpRequestUtils.parseCookies(cookies);
+        return cookieValues.get("JSESSIONID");
     }
 }
