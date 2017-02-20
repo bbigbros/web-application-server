@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import controller.*;
+import http.HttpCookie;
 import http.HttpRequest;
 import http.HttpResponse;
 import org.slf4j.Logger;
@@ -37,8 +38,8 @@ public class RequestHandler extends Thread {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
-
-            if (getSeesionId(request.getHeader("Cookie")) == null) {
+            log.debug("session check: {} ", (request.getCookies().getCookie("JSESSIONID")));
+            if ((request.getCookies().getCookie("JSESSIONID") == null)) {
                 response.addHeader("Set-Cookie", "JSESSIONID=" + UUID.randomUUID());
             }
 
@@ -59,10 +60,5 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
-    }
-
-    public String getSeesionId(String cookies) {
-        Map<String, String> cookieValues = HttpRequestUtils.parseCookies(cookies);
-        return cookieValues.get("JSESSIONID");
     }
 }

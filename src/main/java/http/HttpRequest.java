@@ -88,6 +88,10 @@ public class HttpRequest {
 
     public String getPath() { return requestLine.get("path"); }
 
+    public HttpCookie getCookies() { return new HttpCookie(getHeader("Cookie")); }
+
+    public HttpSession getSession() { return HttpSessions.getSession(getCookies().getCookie("JESSIONID")); }
+
     public String getHttpVersion() {
         return requestLine.get("httpVer");
     }

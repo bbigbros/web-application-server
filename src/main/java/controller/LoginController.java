@@ -3,6 +3,7 @@ package controller;
 import db.DataBase;
 import http.HttpRequest;
 import http.HttpResponse;
+import http.HttpSession;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,13 +19,19 @@ public class LoginController extends AbstractController {
     @Override
     public void doPost(HttpRequest request, HttpResponse response) {
         try {
+            log.debug("loginController cookie chk : {}", (request.getCookies().getCookie("JSESSIONID")));
             User user = DataBase.findUserById(request.getParameter("userId"));
-            if (user.getPassword().equals(request.getParameter("password"))){
-                response.addHeader("Set-Cookie", "logined=true");
-                response.sendRedirect("/index.html");
-            } else {
-                response.forward("/user/login_failed.html");
+            if(user != null) {
+                if (user.getPassword().equals(request.getParameter("password"))){
+                    log.debug("http session chk : {}", (request.getCookies().getCookie("JSESSIONID")));
+                    HttpSession session = request.getSession();
+                    session.setAttribute("user", user);
+                    response.sendRedirect("/index.html");
+                } else {
+                    response.forward("/user/login_failed.html");
+                }
             }
+
         } catch (NullPointerException e) {
             log.debug("id가 존재하지 않습니다.");
             e.getMessage();
